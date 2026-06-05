@@ -10,11 +10,11 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <style>
         :root {
-            --bg-base: #090b0f;
-            --bg-panel: #0d1018;
-            --bg-card: #111520;
-            --bg-row: #0f1319;
-            --bg-hover: #161d2e;
+            --bg-base: #0a0e1a;
+            --bg-panel: #0d1225;
+            --bg-card: #111830;
+            --bg-row: #0f1628;
+            --bg-hover: #1a2540;
             --border: #1a2035;
             --border-hi: #252f4a;
             --blue: #3b82f6;
@@ -40,8 +40,6 @@
             content:''; position:fixed; inset:0; pointer-events:none; z-index:9998;
             background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.04) 3px,rgba(0,0,0,0.04) 4px);
         }
-
-        /* NAV */
         nav {
             position:sticky; top:0; z-index:200;
             height:56px; padding:0 20px;
@@ -64,17 +62,10 @@
         }
         .nav-sep { width:1px; height:20px; background:var(--border-hi); margin:0 4px; }
         .nav-actions { display:flex; gap:8px; align-items:center; }
-
-        /* SYNC STATUS */
-        .sync-dot {
-            width:8px; height:8px; border-radius:50%; background:#374151;
-            display:inline-block; transition:background .3s;
-        }
+        .sync-dot { width:8px; height:8px; border-radius:50%; background:#374151; display:inline-block; transition:background .3s; }
         .sync-dot.ok { background:var(--green); box-shadow:0 0 6px var(--green); }
         .sync-dot.err { background:var(--red); box-shadow:0 0 6px var(--red); }
         .sync-label { font-size:9px; color:var(--text-2); letter-spacing:1px; }
-
-        /* BUTTONS */
         .btn {
             display:inline-flex; align-items:center; gap:6px;
             padding:6px 14px; border-radius:5px; cursor:pointer;
@@ -97,8 +88,6 @@
             border:1px solid var(--border-hi); transition:all .15s;
         }
         .file-btn:hover { background:var(--bg-hover); color:var(--text-1); border-color:#303d60; }
-
-        /* TICKER */
         .ticker { height:28px; background:var(--bg-card); border-bottom:1px solid var(--border); overflow:hidden; display:flex; align-items:center; }
         .ticker-track { display:flex; gap:28px; animation:tick 40s linear infinite; white-space:nowrap; padding:0 16px; }
         @keyframes tick { from{transform:translateX(0)} to{transform:translateX(-50%)} }
@@ -106,12 +95,7 @@
         .tick-sym { color:var(--text-1); font-weight:700; }
         .tick-up { color:var(--green); }
         .tick-dn { color:var(--red); }
-
-        /* STATS */
-        .stats {
-            display:grid; grid-template-columns:repeat(5,1fr);
-            border-bottom:1px solid var(--border);
-        }
+        .stats { display:grid; grid-template-columns:repeat(5,1fr); border-bottom:1px solid var(--border); }
         .stat { background:var(--bg-panel); padding:14px 20px; position:relative; }
         .stat + .stat { border-left:1px solid var(--border); }
         .stat::before { content:''; position:absolute; top:0; left:0; width:100%; height:2px; background:var(--sc,var(--blue)); }
@@ -127,16 +111,12 @@
         .stat.s-cyan .stat-val { color:var(--cyan); }
         .stat.s-yellow .stat-val { color:var(--yellow); }
         .stat-icon { font-size:11px; color:var(--text-3); }
-
-        /* MAIN */
         .main { padding:20px; }
         .panel { background:var(--bg-panel); border:1px solid var(--border); border-radius:8px; overflow:hidden; }
         .panel-head { display:flex; align-items:center; justify-content:space-between; padding:12px 18px; background:var(--bg-card); border-bottom:1px solid var(--border); }
         .panel-title { font-family:var(--display); font-size:12px; font-weight:700; letter-spacing:1px; display:flex; align-items:center; gap:8px; }
         .live-dot { width:6px; height:6px; border-radius:50%; background:var(--cyan); box-shadow:0 0 6px var(--cyan); animation:blink 2s infinite; }
         @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
-
-        /* TABLE */
         .tbl-wrap { overflow-x:auto; }
         table { width:100%; border-collapse:collapse; }
         thead tr { background:var(--bg-card); border-bottom:1px solid var(--border-hi); }
@@ -149,8 +129,6 @@
         tbody tr.r-stop { background:var(--red-bg); border-bottom:1px solid var(--red-border); }
         tbody tr.r-stop:hover { background:#260808; }
         td { padding:8px 12px; }
-
-        /* CELL INPUTS */
         .ci {
             width:100%; background:transparent; border:1px solid transparent;
             color:var(--text-1); font-family:var(--mono); font-size:11px;
@@ -160,24 +138,16 @@
         .ci:focus { outline:none; border-color:var(--blue); background:var(--bg-base); box-shadow:0 0 0 2px var(--blue-dim); }
         select.ci { cursor:pointer; }
         select.ci option { background:#161d2e; color:var(--text-1); }
-
-        /* SYMBOL */
         .sym-wrap { display:flex; align-items:center; gap:8px; }
         .sym-badge { width:26px; height:26px; border-radius:5px; background:var(--blue-dim); border:1px solid rgba(59,130,246,0.25); display:flex; align-items:center; justify-content:center; font-size:8px; font-weight:800; color:var(--blue); flex-shrink:0; }
-
-        /* GÜNCEL FİYAT */
         .guncel-cell { font-family:var(--mono); font-size:11px; font-weight:600; text-align:right; padding-right:8px; }
         .guncel-up { color:var(--green); }
         .guncel-dn { color:var(--red); }
         .guncel-nil { color:var(--text-3); }
-
-        /* KZ */
         .kz { display:inline-flex; align-items:center; gap:3px; padding:3px 8px; border-radius:4px; font-size:11px; font-weight:700; }
         .kz.pos { background:rgba(34,197,94,0.12); color:var(--green); border:1px solid rgba(34,197,94,0.28); }
         .kz.neg { background:rgba(239,68,68,0.12); color:var(--red); border:1px solid rgba(239,68,68,0.28); }
         .kz.nil { color:var(--text-3); font-size:12px; }
-
-        /* STATUS SELECT */
         .ss {
             appearance:none; -webkit-appearance:none;
             width:100%; background:transparent;
@@ -193,17 +163,11 @@
         .ss.bk { color:var(--yellow); border-color:rgba(245,158,11,0.3); }
         .ss.hd { color:var(--green); border-color:rgba(34,197,94,0.35); background-color:rgba(34,197,94,0.08); }
         .ss.st { color:var(--red); border-color:rgba(239,68,68,0.35); background-color:rgba(239,68,68,0.08); }
-
-        /* DEL */
         .del-btn { background:transparent; border:1px solid var(--border); color:var(--text-3); width:26px; height:26px; border-radius:4px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:10px; transition:all .12s; }
         .del-btn:hover { background:rgba(239,68,68,0.12); border-color:rgba(239,68,68,0.35); color:var(--red); }
-
-        /* EMPTY */
         .empty { text-align:center; padding:60px 20px; color:var(--text-3); }
         .empty i { font-size:28px; margin-bottom:12px; display:block; opacity:.25; }
         .empty p { font-size:10px; letter-spacing:1.5px; text-transform:uppercase; }
-
-        /* TOAST */
         .toast {
             position:fixed; bottom:24px; right:24px; z-index:9999;
             background:#1e293b; color:#fff; padding:10px 18px;
@@ -212,26 +176,12 @@
             opacity:0; transform:translateY(6px); transition:all .2s;
         }
         .toast.show { opacity:1; transform:translateY(0); }
-
-        /* SPIN */
         @keyframes spin { to{transform:rotate(360deg)} }
         .spin { animation:spin .7s linear infinite; display:inline-block; }
-
-        /* ROW ANIM */
         @keyframes rowIn { from{opacity:0;transform:translateX(-6px)} to{opacity:1;transform:translateX(0)} }
         tbody tr { animation:rowIn .18s ease forwards; }
-
-        /* RESPONSIVE */
-        @media(max-width:900px) {
-            .stats { grid-template-columns:repeat(3,1fr); }
-            .stat:nth-child(4),.stat:nth-child(5) { border-top:1px solid var(--border); }
-        }
-        @media(max-width:600px) {
-            .stats { grid-template-columns:1fr 1fr; }
-            nav { padding:0 12px; }
-            .main { padding:12px; }
-            .nav-title span:not(.nav-badge) { display:none; }
-        }
+        @media(max-width:900px) { .stats { grid-template-columns:repeat(3,1fr); } .stat:nth-child(4),.stat:nth-child(5) { border-top:1px solid var(--border); } }
+        @media(max-width:600px) { .stats { grid-template-columns:1fr 1fr; } nav { padding:0 12px; } .main { padding:12px; } .nav-title span:not(.nav-badge) { display:none; } }
     </style>
 </head>
 <body>
@@ -242,7 +192,7 @@
         <div class="nav-sep"></div>
         <div class="nav-title">
             PORTFÖY TERMİNALİ
-            <span class="nav-badge">v3.0</span>
+            <span class="nav-badge">v3.1</span>
         </div>
     </div>
     <div class="nav-actions">
@@ -317,8 +267,6 @@
 <script>
 // ═══════════════════════════════════════════════
 // FİREBASE YAPILANDIRMASI
-// Kendi Firebase projenizin bilgilerini buraya girin:
-// console.firebase.google.com → Proje → Proje Ayarları → Web Uygulaması
 // ═══════════════════════════════════════════════
 const firebaseConfig = {
     apiKey:            "AIzaSyBUGSoFvoxbvwtIXTYb3pbolj5CE9B--Bs",
@@ -328,19 +276,16 @@ const firebaseConfig = {
     messagingSenderId: "737979156545",
     appId:             "1:737979156545:web:c8493429f5bed3e93d5ec0"
 };
-// ═══════════════════════════════════════════════
-// Bu kimlik tüm cihazlarda aynı veriyi gösterir.
-// İsterseniz değiştirebilirsiniz ("portfoy-1" gibi)
 const PORTFOLIO_DOC_ID = "PORTFOY-MASTER-V3";
-// ═══════════════════════════════════════════════
 
+// ─── Semboller (alfabetik sıralı) ───────────────
 const SEMBOLLER = [
-    "EUPWR","FONET","FZLGY","ALBRK","GLRMK","YUNSA","ISDMR","SAFKR",
-    "KATMR","MARBL","BORSK","DESPC","BIMAS","YATAS","PENTA","KRSTL",
-    "GUBRF","EGPRO","EBEBK","MPARK","ARASE","PLTUR","GRTHO","CMBTN",
-    "BEGYO","BOSSA","EKSUN","SRVGY","GRSEL","LXGYO","ELITE","MEYSU",
-    "KZBGY","NTGAZ","EGGUB","FADE"
-];
+    "ALBRK","ARASE","BEGYO","BIMAS","BORSK","BOSSA","CMBTN","DESPC",
+    "EBEBK","EGPRO","EGGUB","EKSUN","ELITE","EUPWR","FADE","FONET",
+    "FZLGY","GLRMK","GRSEL","GRTHO","GUBRF","ISDMR","KATMR","KRSTL",
+    "KZBGY","LXGYO","MARBL","MEYSU","MPARK","NTGAZ","PENTA","PLTUR",
+    "SAFKR","SRVGY","YATAS","YUNSA"
+].sort();
 
 let islemler = [];
 let guncelFiyatlar = {};
@@ -351,7 +296,6 @@ let saveTimer = null;
 // ─── Firebase başlat ────────────────────────────
 function initFirebase() {
     try {
-
         firebase.initializeApp(firebaseConfig);
         db = firebase.firestore();
         loadSync();
@@ -364,9 +308,9 @@ function initFirebase() {
 function setSyncStatus(state) {
     const dot = document.getElementById('syncDot');
     const lbl = document.getElementById('syncLabel');
-    if (state === 'ok')      { dot.className='sync-dot ok'; lbl.textContent='CANLI'; }
-    else if (state === 'syncing') { dot.className='sync-dot'; lbl.textContent='KAYDEDILIYOR'; }
-    else                     { dot.className='sync-dot err'; lbl.textContent='OFFLİNE'; }
+    if (state === 'ok')           { dot.className='sync-dot ok';  lbl.textContent='CANLI'; }
+    else if (state === 'syncing') { dot.className='sync-dot';     lbl.textContent='KAYDEDİLİYOR'; }
+    else                          { dot.className='sync-dot err'; lbl.textContent='OFFLİNE'; }
 }
 
 function loadLocal() {
@@ -384,14 +328,11 @@ function loadSync() {
                 if (parsed && Array.isArray(parsed)) islemler = parsed;
             } catch(e) {}
         } else {
-            // İlk kez — yerel varsa kullan
             const raw = localStorage.getItem('bn_v3');
             if (raw) { try { islemler = JSON.parse(raw); } catch(e) {} }
         }
         setSyncStatus('ok');
         render();
-
-        // Canlı güncelleme dinleyicisi
         if (!snapshotActive) {
             snapshotActive = true;
             db.collection('portfolios').doc(PORTFOLIO_DOC_ID).onSnapshot(snap => {
@@ -405,9 +346,9 @@ function loadSync() {
                         }
                     } catch(e) {}
                 }
-            }, err => { setSyncStatus('offline'); });
+            }, () => setSyncStatus('offline'));
         }
-    }).catch(err => {
+    }).catch(() => {
         setSyncStatus('offline');
         showToast('Offline çalışılıyor — yerel veri yüklendi');
         loadLocal();
@@ -415,7 +356,6 @@ function loadSync() {
 }
 
 function save() {
-    // Her zaman local'e yaz
     try { localStorage.setItem('bn_v3', JSON.stringify(islemler)); } catch(e) {}
     if (!db) return;
     clearTimeout(saveTimer);
@@ -424,7 +364,7 @@ function save() {
         db.collection('portfolios').doc(PORTFOLIO_DOC_ID)
             .set({ data: JSON.stringify(islemler), updatedAt: new Date().toISOString() })
             .then(() => setSyncStatus('ok'))
-            .catch(() => { setSyncStatus('offline'); showToast('⚠️ Kayıt başarısız'); });
+            .catch(() => { setSyncStatus('offline'); showToast('Kayıt başarısız'); });
     }, 600);
 }
 
@@ -439,13 +379,12 @@ function save() {
     el.innerHTML = items+items;
 })();
 
-// ─── Fiyat Güncelleme (BIST — Yahoo Finance proxy) ──
+// ─── Fiyat Güncelleme ──────────────────────────
 async function fiyatlariGuncelle() {
     const btn = document.getElementById('btnRefresh');
     const icon = btn.querySelector('i');
     icon.className = 'fa-solid fa-rotate-right spin';
     btn.disabled = true;
-
     const semboller = [...new Set(islemler.map(d => d.sembol).filter(Boolean))];
     if (!semboller.length) {
         icon.className = 'fa-solid fa-rotate-right';
@@ -453,9 +392,7 @@ async function fiyatlariGuncelle() {
         showToast('Güncellenecek sembol bulunamadı');
         return;
     }
-
     let guncellenen = 0;
-    // Yahoo Finance üzerinden BIST sembolleri .IS uzantısıyla çekilir
     for (const sem of semboller) {
         try {
             const url = `https://query1.finance.yahoo.com/v8/finance/chart/${sem}.IS?interval=1d&range=1d`;
@@ -463,26 +400,28 @@ async function fiyatlariGuncelle() {
             if (!res.ok) continue;
             const json = await res.json();
             const price = json?.chart?.result?.[0]?.meta?.regularMarketPrice;
-            if (price && price > 0) {
-                guncelFiyatlar[sem] = price;
-                guncellenen++;
-            }
+            if (price && price > 0) { guncelFiyatlar[sem] = price; guncellenen++; }
         } catch(e) {}
     }
-
     icon.className = 'fa-solid fa-rotate-right';
     btn.disabled = false;
-
     const now = new Date();
     document.getElementById('lastUpdate').textContent =
         `Güncellendi: ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')} (${guncellenen} sembol)`;
+    if (guncellenen > 0) { showToast(`${guncellenen} sembol güncellendi`); render(); }
+    else showToast('Fiyat alınamadı — CORS sınırlaması olabilir');
+}
 
-    if (guncellenen > 0) {
-        showToast(`✅ ${guncellenen} sembol güncellendi`);
-        render();
-    } else {
-        showToast('⚠️ Fiyat alınamadı — CORS sınırlaması olabilir');
-    }
+// ─── Durum otomatik hesapla ───────────────────
+// Satış girilmişse: satış>=hedef → Hedefe Ulaştı, satış<=stop → Stop Oldu, yoksa Bekliyor
+function otoDurum(d) {
+    const satis = parseFloat(d.satis);
+    const hedef = parseFloat(d.hedef);
+    const stop  = parseFloat(d.stop);
+    if (!d.satis || isNaN(satis)) return 'Bekliyor';
+    if (!isNaN(hedef) && hedef > 0 && satis >= hedef) return 'Hedefe Ulaştı';
+    if (!isNaN(stop)  && stop  > 0 && satis <= stop)  return 'Stop Oldu';
+    return 'Bekliyor';
 }
 
 // ─── Render ─────────────────────────────────────
@@ -494,7 +433,7 @@ function render(){
         stats(); return;
     }
     islemler.forEach((d,i)=>{
-        // KZ hesapla — satış fiyatına göre
+        // KZ hesapla
         let kzHtml = '<span class="kz nil">—</span>';
         const g = parseFloat(d.giris), s = parseFloat(d.satis);
         if(d.giris && d.satis && !isNaN(g) && !isNaN(s) && g > 0){
@@ -502,58 +441,106 @@ function render(){
             const cls = pct>=0?'pos':'neg', arr = pct>=0?'▲':'▼';
             kzHtml = `<span class="kz ${cls}">${arr} %${Math.abs(pct)}</span>`;
         } else if(d.giris && !isNaN(g) && g > 0 && guncelFiyatlar[d.sembol]) {
-            // Satış yoksa güncel fiyat ile geçici KZ
             const gf = guncelFiyatlar[d.sembol];
             const pct = (((gf-g)/g)*100).toFixed(2);
             const cls = pct>=0?'pos':'neg', arr = pct>=0?'▲':'▼';
             kzHtml = `<span class="kz ${cls}" title="Güncel fiyata göre">${arr} %${Math.abs(pct)}</span>`;
         }
-
-        // Güncel fiyat hücresi
+        // Güncel fiyat
         let guncelHtml = '<span class="guncel-nil">—</span>';
         if(guncelFiyatlar[d.sembol]) {
             const gf = guncelFiyatlar[d.sembol];
             const girisVal = parseFloat(d.giris);
             let cls = 'guncel-nil';
-            if (!isNaN(girisVal) && girisVal > 0) {
-                cls = gf >= girisVal ? 'guncel-up' : 'guncel-dn';
-            }
+            if (!isNaN(girisVal) && girisVal > 0) cls = gf >= girisVal ? 'guncel-up' : 'guncel-dn';
             guncelHtml = `<span class="${cls}">${gf.toFixed(2)}</span>`;
         }
-
-        const rc = d.durum==='Hedefe Ulaştı'?'r-hedef':d.durum==='Stop Oldu'?'r-stop':'';
-        const sc = d.durum==='Hedefe Ulaştı'?'hd':d.durum==='Stop Oldu'?'st':'bk';
+        const durum = d.durum || 'Bekliyor';
+        const rc = durum==='Hedefe Ulaştı'?'r-hedef':durum==='Stop Oldu'?'r-stop':'';
+        const sc = durum==='Hedefe Ulaştı'?'hd':durum==='Stop Oldu'?'st':'bk';
         const badge = d.sembol?d.sembol.slice(0,2):'?';
-        const opts = SEMBOLLER.map(s=>`<option value="${s}" ${d.sembol===s?'selected':''}>${s}</option>`).join('');
+        const opts = SEMBOLLER.map(sm=>`<option value="${sm}" ${d.sembol===sm?'selected':''}>${sm}</option>`).join('');
         const tr = document.createElement('tr');
         tr.className = rc;
+        // data-row index ile Tab navigasyonu için
+        tr.dataset.row = i;
         tr.innerHTML = `
             <td><div class="sym-wrap"><div class="sym-badge">${badge}</div>
-                <select class="ci" onchange="upd(${i},'sembol',this.value)">
+                <select class="ci" data-field="sembol" onchange="upd(${i},'sembol',this.value)">
                     <option value="">Seçiniz…</option>${opts}
                 </select></div></td>
-            <td><input type="number" step="0.01" value="${d.sinyal||''}" placeholder="0.00" class="ci" onchange="upd(${i},'sinyal',this.value)"></td>
-            <td><input type="number" step="0.01" value="${d.giris||''}" placeholder="0.00" class="ci" onchange="upd(${i},'giris',this.value)"></td>
-            <td><input type="number" step="0.01" value="${d.hedef||''}" placeholder="0.00" class="ci" onchange="upd(${i},'hedef',this.value)"></td>
-            <td><input type="number" step="0.01" value="${d.stop||''}" placeholder="0.00" class="ci" onchange="upd(${i},'stop',this.value)"></td>
+            <td><input type="number" step="0.01" value="${d.sinyal||''}" placeholder="0.00" class="ci" data-field="sinyal" onchange="upd(${i},'sinyal',this.value)"></td>
+            <td><input type="number" step="0.01" value="${d.giris||''}" placeholder="0.00" class="ci" data-field="giris" onchange="upd(${i},'giris',this.value)"></td>
+            <td><input type="number" step="0.01" value="${d.hedef||''}" placeholder="0.00" class="ci" data-field="hedef" onchange="upd(${i},'hedef',this.value)"></td>
+            <td><input type="number" step="0.01" value="${d.stop||''}" placeholder="0.00" class="ci" data-field="stop" onchange="upd(${i},'stop',this.value)"></td>
             <td style="text-align:right">${guncelHtml}</td>
-            <td><input type="number" step="0.01" value="${d.satis||''}" placeholder="0.00" class="ci" onchange="upd(${i},'satis',this.value)"></td>
+            <td><input type="number" step="0.01" value="${d.satis||''}" placeholder="0.00" class="ci" data-field="satis" onchange="upd(${i},'satis',this.value)"></td>
             <td style="text-align:center">${kzHtml}</td>
-            <td><select class="ss ${sc}" onchange="upd(${i},'durum',this.value)">
-                <option value="Bekliyor" ${d.durum==='Bekliyor'?'selected':''}>⏳ Bekliyor</option>
-                <option value="Hedefe Ulaştı" ${d.durum==='Hedefe Ulaştı'?'selected':''}>✅ Hedefe Ulaştı</option>
-                <option value="Stop Oldu" ${d.durum==='Stop Oldu'?'selected':''}>❌ Stop Oldu</option>
+            <td><select class="ss ${sc}" data-field="durum" onchange="updDurum(${i},this.value)">
+                <option value="Bekliyor" ${durum==='Bekliyor'?'selected':''}>⏳ Bekliyor</option>
+                <option value="Hedefe Ulaştı" ${durum==='Hedefe Ulaştı'?'selected':''}>✅ Hedefe Ulaştı</option>
+                <option value="Stop Oldu" ${durum==='Stop Oldu'?'selected':''}>❌ Stop Oldu</option>
             </select></td>
             <td style="text-align:center"><button class="del-btn" onclick="sil(${i})"><i class="fa-solid fa-trash-can"></i></button></td>
         `;
         tbody.appendChild(tr);
     });
+
+    // ─── Tab / Shift+Tab navigasyonu ──────────────
+    // Tüm navigasyona dahil edilebilir inputları sıraya koy (güncel fiyat hücresi hariç)
+    const navFields = ['sembol','sinyal','giris','hedef','stop','satis','durum'];
+    const allNavEls = [];
+    document.querySelectorAll('#tablo tr[data-row]').forEach(tr => {
+        navFields.forEach(f => {
+            const el = tr.querySelector(`[data-field="${f}"]`);
+            if (el) allNavEls.push(el);
+        });
+    });
+    allNavEls.forEach((el, idx) => {
+        el.addEventListener('keydown', function(e) {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const next = e.shiftKey
+                    ? allNavEls[idx - 1]
+                    : allNavEls[idx + 1];
+                if (next) { next.focus(); if (next.select) next.select(); }
+            }
+        });
+    });
+
     stats();
 }
 
-function yeniSatir(){ islemler.unshift({sembol:'',sinyal:'',giris:'',hedef:'',stop:'',satis:'',durum:'Bekliyor'}); save(); render(); }
-function upd(i,k,v){ islemler[i][k]=v; save(); render(); }
-function sil(i){ if(confirm('Bu işlemi silmek istediğinize emin misiniz?')){ islemler.splice(i,1); save(); render(); } }
+function yeniSatir(){
+    islemler.unshift({sembol:'',sinyal:'',giris:'',hedef:'',stop:'',satis:'',durum:'Bekliyor'});
+    save(); render();
+    // Yeni satırın ilk inputuna odaklan
+    setTimeout(() => {
+        const first = document.querySelector('#tablo tr[data-row="0"] [data-field="sembol"]');
+        if (first) first.focus();
+    }, 50);
+}
+
+function upd(i, k, v) {
+    islemler[i][k] = v;
+    // Satış fiyatı değişince durumu otomatik güncelle
+    if (k === 'satis' || k === 'hedef' || k === 'stop') {
+        islemler[i].durum = otoDurum(islemler[i]);
+    }
+    save(); render();
+}
+
+// Kullanıcı durumu manuel de değiştirebilir
+function updDurum(i, v) {
+    islemler[i].durum = v;
+    save(); render();
+}
+
+function sil(i){
+    if(confirm('Bu işlemi silmek istediğinize emin misiniz?')){
+        islemler.splice(i,1); save(); render();
+    }
+}
 
 function stats(){
     let acik=0,hedef=0,stop=0;
@@ -579,16 +566,19 @@ function yedekAl(){
 function yedekYukle(e){
     const f=e.target.files[0]; if(!f) return;
     const r=new FileReader();
-    r.onload=ev=>{ try{ islemler=JSON.parse(ev.target.result); save(); render(); showToast('✅ Yedek yüklendi!'); }catch{ showToast('❌ Dosya formatı hatalı!'); } };
+    r.onload=ev=>{
+        try{ islemler=JSON.parse(ev.target.result); save(); render(); showToast('Yedek yüklendi!'); }
+        catch{ showToast('Dosya formatı hatalı!'); }
+    };
     r.readAsText(f);
 }
 
 let toastTimer;
-function showToast(msg) {
-    const t = document.getElementById('toast');
-    t.textContent = msg; t.classList.add('show');
+function showToast(msg){
+    const t=document.getElementById('toast');
+    t.textContent=msg; t.classList.add('show');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+    toastTimer=setTimeout(()=>t.classList.remove('show'),3000);
 }
 
 initFirebase();
