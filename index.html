@@ -321,12 +321,12 @@
 // console.firebase.google.com → Proje → Proje Ayarları → Web Uygulaması
 // ═══════════════════════════════════════════════
 const firebaseConfig = {
-    apiKey:            "BURAYA_API_KEY",
-    authDomain:        "BURAYA_AUTH_DOMAIN",
-    projectId:         "BURAYA_PROJECT_ID",
-    storageBucket:     "BURAYA_STORAGE_BUCKET",
-    messagingSenderId: "BURAYA_SENDER_ID",
-    appId:             "BURAYA_APP_ID"
+    apiKey:            "AIzaSyBUGSoFvoxbvwtIXTYb3pbolj5CE9B--Bs",
+    authDomain:        "sinyaltakipterminali.firebaseapp.com",
+    projectId:         "sinyaltakipterminali",
+    storageBucket:     "sinyaltakipterminali.firebasestorage.app",
+    messagingSenderId: "737979156545",
+    appId:             "1:737979156545:web:c8493429f5bed3e93d5ec0"
 };
 // ═══════════════════════════════════════════════
 // Bu kimlik tüm cihazlarda aynı veriyi gösterir.
@@ -351,12 +351,7 @@ let saveTimer = null;
 // ─── Firebase başlat ────────────────────────────
 function initFirebase() {
     try {
-        if (firebaseConfig.apiKey === "BURAYA_API_KEY") {
-            setSyncStatus('offline');
-            showToast('⚠️ Firebase yapılandırılmamış — yerel mod aktif');
-            loadLocal();
-            return;
-        }
+
         firebase.initializeApp(firebaseConfig);
         db = firebase.firestore();
         loadSync();
