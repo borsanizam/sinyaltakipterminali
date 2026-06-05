@@ -552,36 +552,6 @@ function render(){
         _focusField = null;
     }
 
-    // ═══════════════════════════════════════════
-    // DÜZELTME 2: Tab navigasyonu
-    // navFields sırası = sütun sırası; güncel fiyat (salt okunur) atlanır.
-    // Tüm satırlar boyunca doğrusal gezinti sağlanır.
-    // ═══════════════════════════════════════════
-    const navFields = ['sembol','sinyal','giris','hedef','stop','satis','durum'];
-    const allNavEls = [];
-    tbody.querySelectorAll('tr[data-row]').forEach(tr => {
-        navFields.forEach(f => {
-            const el = tr.querySelector(`[data-field="${f}"]`);
-            if (el) allNavEls.push(el);
-        });
-    });
-
-    allNavEls.forEach((el, idx) => {
-        el.addEventListener('keydown', function(e) {
-            if (e.key === 'Tab') {
-                e.preventDefault();
-                const target = e.shiftKey ? allNavEls[idx - 1] : allNavEls[idx + 1];
-                if (target) {
-                    target.focus();
-                    // Input ise içeriği seç
-                    if (target.tagName === 'INPUT') {
-                        try { target.select(); } catch(x) {}
-                    }
-                }
-            }
-        });
-    });
-
     stats();
 }
 
@@ -612,9 +582,25 @@ function bindEvents() {
             islemler[i].durum = otoDurum(islemler[i]);
         }
 
+        // Durum değiştiyse sadece ilgili DOM elementlerini güncelle, render() çağırma
+        if (['satis','hedef','stop'].includes(field)) {
+            const yeniDurum = otoDurum(islemler[i]);
+            if (islemler[i].durum !== yeniDurum) {
+                islemler[i].durum = yeniDurum;
+                const tr = el.closest('tr[data-row]');
+                if (tr) {
+                    const durumSel = tr.querySelector('[data-field="durum"]');
+                    if (durumSel) {
+                        durumSel.value = yeniDurum;
+                        const sc = yeniDurum==='Hedefe Ulaştı'?'hd':yeniDurum==='Stop Oldu'?'st':'bk';
+                        durumSel.className = 'ss ' + sc;
+                    }
+                    tr.className = yeniDurum==='Hedefe Ulaştı'?'r-hedef':yeniDurum==='Stop Oldu'?'r-stop':'';
+                    stats();
+                }
+            }
+        }
         save();
-        // Sadece durum değiştiyse tam render; değişmediyse yalnızca KZ/güncel hücresini güncelle
-        render();
     });
 
     // Sembol ve durum select onChange
@@ -626,13 +612,47 @@ function bindEvents() {
         const i = parseInt(row);
 
         if (field === 'sembol') {
-            islemler[i].sembol = el.value;
-            save(); render();
+            // blur ile kaydedilir (aşağıda), burada sadece geçici tut
+            el._pendingVal = el.value;
         } else if (field === 'durum') {
             islemler[i].durum = el.value;
             save(); render();
         }
     });
+
+    // Tab navigasyonu — clone sonrası, fresh üzerinde
+    fresh.addEventListener('keydown', function(e) {
+        if (e.key !== 'Tab') return;
+        const el = e.target;
+        if (!el.dataset || el.dataset.field === undefined) return;
+        e.preventDefault();
+        const navFields = ['sembol','sinyal','giris','hedef','stop','satis','durum'];
+        const allNavEls = [];
+        fresh.querySelectorAll('tr[data-row]').forEach(function(tr) {
+            navFields.forEach(function(f) {
+                const found = tr.querySelector('[data-field="' + f + '"]');
+                if (found) allNavEls.push(found);
+            });
+        });
+        const idx = allNavEls.indexOf(el);
+        if (idx === -1) return;
+        const target = e.shiftKey ? allNavEls[idx - 1] : allNavEls[idx + 1];
+        if (target) {
+            target.focus();
+            if (target.tagName === 'INPUT') { try { target.select(); } catch(x) {} }
+        }
+    });
+
+    // Sembol select — blur'da kaydet (ok tuşuyla gezinirken otomatik kayıt olmaz)
+    fresh.addEventListener('blur', function(e) {
+        const el = e.target;
+        if (el.dataset && el.dataset.field === 'sembol' && el._pendingVal !== undefined) {
+            const i = parseInt(el.dataset.row);
+            islemler[i].sembol = el._pendingVal;
+            delete el._pendingVal;
+            save(); render();
+        }
+    }, true);
 
     // Sil butonu
     fresh.addEventListener('click', function(e) {
