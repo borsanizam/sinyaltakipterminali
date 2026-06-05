@@ -300,8 +300,13 @@ let _focusSelEnd = null;
 // ─── Firebase başlat ────────────────────────────
 function initFirebase() {
     try {
-        firebase.initializeApp(firebaseConfig);
+        // Birden fazla initializeApp hatasını önle
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
         db = firebase.firestore();
+        // Offline persistence — bağlantı yoksa yerel cache'den çalış
+        db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
         loadSync();
     } catch(e) {
         setSyncStatus('offline');
@@ -368,7 +373,12 @@ function save() {
         db.collection('portfolios').doc(PORTFOLIO_DOC_ID)
             .set({ data: JSON.stringify(islemler), updatedAt: new Date().toISOString() })
             .then(() => setSyncStatus('ok'))
-            .catch(() => { setSyncStatus('offline'); showToast('Kayıt başarısız'); });
+            .catch((err) => {
+                // Sadece online'dan offline'a geçişte toast göster
+                const wasOnline = document.getElementById('syncDot').classList.contains('ok');
+                setSyncStatus('offline');
+                if (wasOnline) showToast('Firebase bağlantısı kesildi — veriler yerel kaydedildi');
+            });
     }, 600);
 }
 
@@ -429,16 +439,18 @@ function toNum(v) {
 
 function otoDurum(d) {
     const satis = toNum(d.satis);
-    const hedef = toNum(d.hedef);
+    const giris = toNum(d.giris);
     const stop  = toNum(d.stop);
 
     if (isNaN(satis) || satis <= 0) return 'Bekliyor';
 
-    const hedefVar = !isNaN(hedef) && hedef > 0;
-    const stopVar  = !isNaN(stop)  && stop  > 0;
+    // Stop kontrolü önce gelir
+    const stopVar = !isNaN(stop) && stop > 0;
+    if (stopVar && satis <= stop) return 'Stop Oldu';
 
-    if (hedefVar && satis >= hedef) return 'Hedefe Ulaştı';
-    if (stopVar  && satis <= stop)  return 'Stop Oldu';
+    // Giriş fiyatından kârlıysa → Hedefe Ulaştı
+    const girisVar = !isNaN(giris) && giris > 0;
+    if (girisVar && satis > giris) return 'Hedefe Ulaştı';
 
     return 'Bekliyor';
 }
@@ -518,12 +530,12 @@ function render(){
                     <option value="" disabled ${!d.sembol?'selected':''}>Seçiniz…</option>
                     ${opts}
                 </select></div></td>
-            <td><input type="number" step="0.01" value="${d.sinyal||''}" placeholder="0.00" class="ci" data-field="sinyal" data-row="${i}"></td>
-            <td><input type="number" step="0.01" value="${d.giris||''}" placeholder="0.00" class="ci" data-field="giris" data-row="${i}"></td>
-            <td><input type="number" step="0.01" value="${d.hedef||''}" placeholder="0.00" class="ci" data-field="hedef" data-row="${i}"></td>
-            <td><input type="number" step="0.01" value="${d.stop||''}" placeholder="0.00" class="ci" data-field="stop" data-row="${i}"></td>
+            <td><input type="text" inputmode="decimal" value="${d.sinyal||''}" placeholder="0.00" class="ci" data-field="sinyal" data-row="${i}"></td>
+            <td><input type="text" inputmode="decimal" value="${d.giris||''}" placeholder="0.00" class="ci" data-field="giris" data-row="${i}"></td>
+            <td><input type="text" inputmode="decimal" value="${d.hedef||''}" placeholder="0.00" class="ci" data-field="hedef" data-row="${i}"></td>
+            <td><input type="text" inputmode="decimal" value="${d.stop||''}" placeholder="0.00" class="ci" data-field="stop" data-row="${i}"></td>
             <td style="text-align:right">${guncelHtml}</td>
-            <td><input type="number" step="0.01" value="${d.satis||''}" placeholder="0.00" class="ci" data-field="satis" data-row="${i}"></td>
+            <td><input type="text" inputmode="decimal" value="${d.satis||''}" placeholder="0.00" class="ci" data-field="satis" data-row="${i}"></td>
             <td style="text-align:center">${kzHtml}</td>
             <td><select class="ss ${sc}" data-field="durum" data-row="${i}">
                 <option value="Bekliyor" ${durum==='Bekliyor'?'selected':''}>⏳ Bekliyor</option>
@@ -579,8 +591,17 @@ function bindEvents() {
         if (row === undefined || !field) return;
         const i = parseInt(row);
 
-        // Virgülü noktaya çevir (Türkçe klavye uyumluluğu)
-        let val = el.value.replace(',', '.');
+        // Virgülü noktaya çevir, sayısal alanları temizle
+        let val = el.value;
+        const numFields = ['sinyal','giris','hedef','stop','satis'];
+        if (numFields.includes(field)) {
+            val = val.replace(',', '.').replace(/[^0-9.]/g, '');
+            // Birden fazla nokta varsa ilkini tut
+            const parts = val.split('.');
+            if (parts.length > 2) val = parts[0] + '.' + parts.slice(1).join('');
+            // Input görünümünü güncelle (sadece gerekirse)
+            if (el.value !== val && val !== el.value.replace(',','.')) el.value = val;
+        }
         islemler[i][field] = val;
 
         // Durum değiştiyse sadece ilgili DOM elementlerini güncelle, render() çağırma
