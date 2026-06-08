@@ -550,34 +550,47 @@ document.getElementById('tablo').addEventListener('blur', function(e) {
   }
 }, true);
 
+// Sembol select: sadece tıklamayla veya Enter'la seçim yapılınca kaydet.
+// ok tuşuyla listede gezinirken change tetiklense de kayıt olmaz.
+// Bunun için mousedown anında "seçim başladı" flag'i set ediyoruz,
+// change event'i yalnızca bu flag varken işliyoruz.
+document.getElementById('tablo').addEventListener('mousedown', function(e) {
+  const el = e.target;
+  if (el.tagName === 'OPTION' && el.closest('select[data-field="sembol"]')) {
+    el.closest('select')._clickSelect = true;
+  }
+  if (el.tagName === 'SELECT' && el.dataset.field === 'sembol') {
+    el._clickSelect = true;
+  }
+});
+
+document.getElementById('tablo').addEventListener('keydown', function(e) {
+  const el = e.target;
+  if (el.tagName !== 'SELECT' || el.dataset.field !== 'sembol') return;
+  if (e.key === 'Enter' || e.key === ' ') {
+    el._clickSelect = true;
+  }
+});
+
 document.getElementById('tablo').addEventListener('change', function(e) {
   const el = e.target;
   const i = parseInt(el.dataset.row);
   const field = el.dataset.field;
   if (isNaN(i) || !field) return;
 
-  // sembol: change'de sadece geçici tut, blur'da kaydet
-  // (ok tuşuyla gezinirken otomatik kayıt olmasın)
   if (field === 'sembol') {
-    el._pending = el.value; // blur'da işlenecek
+    // Sadece tıklama veya Enter ile seçildiyse kaydet
+    if (el._clickSelect) {
+      el._clickSelect = false;
+      islemler[i].sembol = el.value;
+      save(); render();
+    }
+    // ok tuşuyla gezinme — kaydetme
   } else if (field === 'durum') {
     islemler[i].durum = el.value;
     save(); render();
   }
 });
-
-document.getElementById('tablo').addEventListener('blur', function(e) {
-  const el = e.target;
-  const i = parseInt(el.dataset.row);
-  const field = el.dataset.field;
-  if (isNaN(i) || field !== 'sembol') return;
-  const val = el._pending !== undefined ? el._pending : el.value;
-  delete el._pending;
-  if (val && val !== islemler[i].sembol) {
-    islemler[i].sembol = val;
-    save(); render();
-  }
-}, true);
 
 document.getElementById('tablo').addEventListener('click', function(e) {
   const btn = e.target.closest('[data-del]');
