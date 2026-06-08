@@ -544,7 +544,7 @@ function handleNumericField(el) {
 
     // KZ hücresini de güncelle
     const g = toNum(islemler[i].giris), s = toNum(islemler[i].satis);
-    const kzTd = tr.cells[7]; // KZ sütunu index 7
+    const kzTd = tr.cells[8]; // KZ sütunu index 7
     if (kzTd) {
       if (!isNaN(g) && g > 0 && !isNaN(s) && s > 0) {
         const pct = (((s-g)/g)*100).toFixed(2);
