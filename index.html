@@ -509,7 +509,7 @@ function render() {
       <td><input class="ci" type="text" inputmode="decimal" data-field="stop"   data-row="${i}" value="${d.stop||''}"   placeholder="0.00"></td>
       <td style="text-align:right;font-size:11px">${guncelHtml}</td>
       <td><input class="ci" type="text" inputmode="decimal" data-field="satis"  data-row="${i}" value="${d.satis||''}"  placeholder="0.00"></td>
-      <td style="text-align:center">${kzHtml}</td>
+      <td style="text-align:center" data-kz="1">${kzHtml}</td>
       <td><select class="ss ${sc}" data-field="durum" data-row="${i}">
         <option value="Bekliyor"${durum==='Bekliyor'?' selected':''}>⏳ Bekliyor</option>
         <option value="Hedefe Ulaştı"${durum==='Hedefe Ulaştı'?' selected':''}>✅ Hedefe Ulaştı</option>
@@ -544,7 +544,7 @@ function handleNumericField(el) {
 
     // KZ hücresini de güncelle
     const g = toNum(islemler[i].giris), s = toNum(islemler[i].satis);
-    const kzTd = tr.cells[8]; // KZ sütunu index 7
+    const kzTd = tr.querySelector('td[data-kz]');
     if (kzTd) {
       if (!isNaN(g) && g > 0 && !isNaN(s) && s > 0) {
         const pct = (((s-g)/g)*100).toFixed(2);
