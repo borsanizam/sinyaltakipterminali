@@ -244,6 +244,10 @@ const FB_CONFIG = {
   messagingSenderId:"737979156545",
   appId:"1:737979156545:web:c8493429f5bed3e93d5ec0"
 };
+// NOT: Firebase Console > Firestore > Rules kısmında
+// allow read, write: if true; olması gerekiyor.
+// Authentication > Settings > Authorized domains'e
+// sitenizin domain'ini (github.io veya başka) eklemeniz gerekiyor.
 const DOC_ID = "PORTFOY-MASTER-V3";
 
 // ── Semboller ─────────────────────────────────────────────
@@ -331,9 +335,17 @@ function initFirebase() {
     if (!firebase.apps.length) firebase.initializeApp(FB_CONFIG);
     db = firebase.firestore();
     // Offline cache aç
-    db.enablePersistence({synchronizeTabs:true}).catch(()=>{});
+    // Persistence — bazı tarayıcılarda çalışmayabilir, hata önemli değil
+    db.enablePersistence({synchronizeTabs:true}).catch(err => {
+      if (err.code === 'failed-precondition') {
+        // Birden fazla sekme açık — sadece biri persistence kullanabilir
+        db.enablePersistence().catch(()=>{});
+      }
+    });
 
-    db.collection('portfolios').doc(DOC_ID).get()
+    // 5 saniye timeout — Firebase yanıt vermezse yerel veriyle devam et
+    const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 5000));
+    Promise.race([db.collection('portfolios').doc(DOC_ID).get(), timeout])
       .then(doc => {
         if (doc.exists) {
           try {
@@ -346,7 +358,6 @@ function initFirebase() {
         setSyncStatus('ok');
         offlineToastShown = false;
         render();
-        // Realtime listener
         if (!snapshotActive) {
           snapshotActive = true;
           db.collection('portfolios').doc(DOC_ID).onSnapshot(snap => {
@@ -362,14 +373,18 @@ function initFirebase() {
         }
       })
       .catch(() => {
+        // Firebase erişilemez — yerel veriyle çalış
         setSyncStatus('offline');
         yerelYukle();
         render();
+        // 30 saniyede bir yeniden bağlan
+        setTimeout(() => { snapshotActive = false; initFirebase(); }, 30000);
       });
   } catch(e) {
     setSyncStatus('offline');
     yerelYukle();
     render();
+    setTimeout(() => { snapshotActive = false; initFirebase(); }, 30000);
   }
 }
 
@@ -487,35 +502,53 @@ function render() {
 }
 
 // ── Event Delegation — tek yer, temiz ─────────────────────
-document.getElementById('tablo').addEventListener('input', function(e) {
-  const el = e.target;
+function handleNumericField(el) {
   const i = parseInt(el.dataset.row);
   const field = el.dataset.field;
   if (isNaN(i) || !field) return;
 
-  // Virgülü noktaya çevir, değeri kaydet
   const val = el.value.replace(',', '.');
   islemler[i][field] = val;
 
-  // Satış/hedef/stop değişince durumu anlık güncelle
   if (field === 'satis' || field === 'stop' || field === 'giris') {
     const yeni = otoDurum(islemler[i]);
-    if (islemler[i].durum !== yeni) {
-      islemler[i].durum = yeni;
-      // Sadece bu satırın durum select + rengi güncelle, render() YOK
-      const tr = el.closest('tr');
-      const sel = tr.querySelector('[data-field="durum"]');
-      if (sel) {
-        sel.value = yeni;
-        sel.className = 'ss ' + (yeni==='Hedefe Ulaştı'?'hd':yeni==='Stop Oldu'?'st':'bk');
-      }
-      tr.className = yeni==='Hedefe Ulaştı'?'r-hedef':yeni==='Stop Oldu'?'r-stop':'';
-      stats();
+    islemler[i].durum = yeni;
+    const tr = el.closest('tr');
+    const sel = tr.querySelector('[data-field="durum"]');
+    if (sel) {
+      sel.value = yeni;
+      sel.className = 'ss ' + (yeni==='Hedefe Ulaştı'?'hd':yeni==='Stop Oldu'?'st':'bk');
     }
-  }
+    tr.className = yeni==='Hedefe Ulaştı'?'r-hedef':yeni==='Stop Oldu'?'r-stop':'';
 
+    // KZ hücresini de güncelle
+    const g = toNum(islemler[i].giris), s = toNum(islemler[i].satis);
+    const kzTd = tr.cells[7]; // KZ sütunu index 7
+    if (kzTd) {
+      if (!isNaN(g) && g > 0 && !isNaN(s) && s > 0) {
+        const pct = (((s-g)/g)*100).toFixed(2);
+        kzTd.innerHTML = `<span class="kz ${pct>=0?'pos':'neg'}">${pct>=0?'▲':'▼'} %${Math.abs(pct)}</span>`;
+      } else {
+        kzTd.innerHTML = '<span class="kz nil">—</span>';
+      }
+    }
+    stats();
+  }
   save();
+}
+
+document.getElementById('tablo').addEventListener('input', function(e) {
+  const el = e.target;
+  if (el.tagName === 'INPUT') handleNumericField(el);
 });
+
+// Tab ile geçince blur tetiklenir — input tetiklenmez, blur ile yakala
+document.getElementById('tablo').addEventListener('blur', function(e) {
+  const el = e.target;
+  if (el.tagName === 'INPUT' && el.dataset.field !== 'sembol') {
+    handleNumericField(el);
+  }
+}, true);
 
 document.getElementById('tablo').addEventListener('change', function(e) {
   const el = e.target;
@@ -523,14 +556,28 @@ document.getElementById('tablo').addEventListener('change', function(e) {
   const field = el.dataset.field;
   if (isNaN(i) || !field) return;
 
+  // sembol: change'de sadece geçici tut, blur'da kaydet
+  // (ok tuşuyla gezinirken otomatik kayıt olmasın)
   if (field === 'sembol') {
-    islemler[i].sembol = el.value;
-    save(); render();
+    el._pending = el.value; // blur'da işlenecek
   } else if (field === 'durum') {
     islemler[i].durum = el.value;
     save(); render();
   }
 });
+
+document.getElementById('tablo').addEventListener('blur', function(e) {
+  const el = e.target;
+  const i = parseInt(el.dataset.row);
+  const field = el.dataset.field;
+  if (isNaN(i) || field !== 'sembol') return;
+  const val = el._pending !== undefined ? el._pending : el.value;
+  delete el._pending;
+  if (val && val !== islemler[i].sembol) {
+    islemler[i].sembol = val;
+    save(); render();
+  }
+}, true);
 
 document.getElementById('tablo').addEventListener('click', function(e) {
   const btn = e.target.closest('[data-del]');
