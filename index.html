@@ -138,6 +138,10 @@ select.ci option{background:#161d2e;color:var(--text-1)}
 .ss:focus{outline:none;border-color:var(--blue)}
 .ss option{background:#161d2e}
 .ss.bk{color:var(--yellow);border-color:rgba(245,158,11,.3)}
+.ss.tip{color:var(--text-2);border-color:var(--border-hi);min-width:120px}
+.ss.tip:has(option[value="hizli"]:checked){color:#f97316;border-color:rgba(249,115,22,.35);background-color:rgba(249,115,22,.08)}
+.ss.tip:has(option[value="5dk"]:checked){color:var(--cyan);border-color:rgba(34,211,238,.35);background-color:rgba(34,211,238,.08)}
+.ss.tip:has(option[value="swing"]:checked){color:#a78bfa;border-color:rgba(167,139,250,.35);background-color:rgba(167,139,250,.08)}
 .ss.hd{color:var(--green);border-color:rgba(34,197,94,.35);background-color:rgba(34,197,94,.08)}
 .ss.st{color:var(--red);border-color:rgba(239,68,68,.35);background-color:rgba(239,68,68,.08)}
 
@@ -148,6 +152,15 @@ select.ci option{background:#161d2e;color:var(--text-1)}
 .del-btn:hover{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.35);color:var(--red)}
 
 /* EMPTY */
+.tip-stats{display:flex;gap:0;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.tip-stat{flex:1;min-width:200px;padding:10px 20px;background:var(--bg-panel);border-right:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.tip-stat:last-child{border-right:none}
+.tip-icon{font-size:16px}
+.tip-info{display:flex;flex-direction:column;gap:2px}
+.tip-name{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-2)}
+.tip-data{font-size:11px;font-weight:700;color:var(--text-1)}
+.tip-wr{font-size:10px;font-weight:700}
+.tip-wr.good{color:var(--green)}.tip-wr.bad{color:var(--red)}.tip-wr.nil{color:var(--text-3)}
 .empty{text-align:center;padding:60px 20px;color:var(--text-3)}
 .empty i{font-size:28px;margin-bottom:12px;display:block;opacity:.25}
 .empty p{font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-2)}
@@ -202,6 +215,7 @@ tbody tr{animation:rowIn .18s ease forwards}
   <div class="stat s-yellow"><div class="stat-lbl">Toplam İşlem</div>
     <div class="stat-row"><span class="stat-val" id="s-top">0</span><i class="fa-solid fa-list stat-icon"></i></div></div>
 </div>
+<div class="tip-stats" id="tipStats"></div>
 
 <div class="main">
   <div class="panel">
@@ -216,6 +230,7 @@ tbody tr{animation:rowIn .18s ease forwards}
       <table>
         <thead><tr>
           <th style="width:150px">Sembol</th>
+          <th style="width:130px">İşlem Tipi</th>
           <th style="width:90px">Sinyal Fiyatı</th>
           <th style="width:90px">Giriş Fiyatı</th>
           <th style="width:80px">Hedef</th>
@@ -437,7 +452,7 @@ function render() {
   tbody.innerHTML = '';
 
   if (!islemler.length) {
-    tbody.innerHTML = '<tr><td colspan="10"><div class="empty"><i class="fa-solid fa-chart-candlestick"></i><p>Henüz işlem eklenmedi</p></div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="11"><div class="empty"><i class="fa-solid fa-chart-candlestick"></i><p>Henüz işlem eklenmedi</p></div></td></tr>';
     stats(); return;
   }
 
@@ -475,6 +490,13 @@ function render() {
     tr.className = rc;
     tr.dataset.row = i;
     tr.innerHTML = `
+
+      <td><select class="ss tip" data-field="tip" data-row="${i}">
+        <option value=""${!d.tip?' selected':''}>— Seçiniz —</option>
+        <option value="hizli"${d.tip==='hizli'?' selected':''}>⚡ Hızlı Yükseliş</option>
+        <option value="5dk"${d.tip==='5dk'?' selected':''}>⏱ 5 Dklık Al</option>
+        <option value="swing"${d.tip==='swing'?' selected':''}>📈 Swing</option>
+      </select></td>
       <td><div class="sym-wrap">
         <div class="sym-badge">${badge}</div>
         <select class="ci" data-field="sembol" data-row="${i}">
@@ -589,6 +611,9 @@ document.getElementById('tablo').addEventListener('change', function(e) {
   } else if (field === 'durum') {
     islemler[i].durum = el.value;
     save(); render();
+  } else if (field === 'tip') {
+    islemler[i].tip = el.value;
+    save();
   }
 });
 
@@ -603,7 +628,7 @@ document.getElementById('tablo').addEventListener('click', function(e) {
 
 // ── Tab navigasyonu ───────────────────────────────────────
 // Delegation ile — render'dan bağımsız, her zaman çalışır
-const NAV_FIELDS = ['sembol','sinyal','giris','hedef','stop','satis','durum'];
+const NAV_FIELDS = ['tip','sembol','sinyal','giris','hedef','stop','satis','durum'];
 document.addEventListener('keydown', function(e) {
   if (e.key !== 'Tab') return;
   const el = e.target;
@@ -630,7 +655,7 @@ document.addEventListener('keydown', function(e) {
 
 // ── Yeni satır ────────────────────────────────────────────
 function yeniSatir() {
-  islemler.unshift({sembol:'',sinyal:'',giris:'',hedef:'',stop:'',satis:'',durum:'Bekliyor'});
+  islemler.unshift({sembol:'',tip:'',sinyal:'',giris:'',hedef:'',stop:'',satis:'',durum:'Bekliyor'});
   save(); render();
   setTimeout(() => {
     const el = document.querySelector('#tablo tr[data-row="0"] [data-field="sembol"]');
@@ -652,6 +677,32 @@ function stats() {
   document.getElementById('s-stop').textContent  = stop;
   document.getElementById('s-wr').textContent    = '%'+(kap>0?((hedef/kap)*100).toFixed(1):0);
   document.getElementById('s-top').textContent   = islemler.length;
+
+  // Tipe göre istatistik
+  const tipler = [
+    {key:'hizli', icon:'⚡', ad:'Hızlı Yükseliş'},
+    {key:'5dk',   icon:'⏱', ad:'5 Dklık Al'},
+    {key:'swing', icon:'📈', ad:'Swing'}
+  ];
+  const el = document.getElementById('tipStats');
+  if (!el) return;
+  el.innerHTML = tipler.map(t => {
+    const list = islemler.filter(d => d.tip === t.key);
+    const th = list.filter(d => d.durum==='Hedefe Ulaştı').length;
+    const ts = list.filter(d => d.durum==='Stop Oldu').length;
+    const tk = th+ts;
+    const wr = tk>0 ? ((th/tk)*100).toFixed(0) : null;
+    const wrCls = wr===null?'nil':wr>=50?'good':'bad';
+    const wrTxt = wr===null ? '—' : '%'+wr;
+    return `<div class="tip-stat">
+      <span class="tip-icon">${t.icon}</span>
+      <div class="tip-info">
+        <span class="tip-name">${t.ad}</span>
+        <span class="tip-data">${list.length} işlem &nbsp;·&nbsp; ${th}✓ ${ts}✗</span>
+      </div>
+      <span class="tip-wr ${wrCls}" style="margin-left:auto">${wrTxt}</span>
+    </div>`;
+  }).join('');
 }
 
 // ── Yedek ─────────────────────────────────────────────────
