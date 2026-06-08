@@ -490,13 +490,6 @@ function render() {
     tr.className = rc;
     tr.dataset.row = i;
     tr.innerHTML = `
-
-      <td><select class="ss tip" data-field="tip" data-row="${i}">
-        <option value=""${!d.tip?' selected':''}>— Seçiniz —</option>
-        <option value="hizli"${d.tip==='hizli'?' selected':''}>⚡ Hızlı Yükseliş</option>
-        <option value="5dk"${d.tip==='5dk'?' selected':''}>⏱ 5 Dklık Al</option>
-        <option value="swing"${d.tip==='swing'?' selected':''}>📈 Swing</option>
-      </select></td>
       <td><div class="sym-wrap">
         <div class="sym-badge">${badge}</div>
         <select class="ci" data-field="sembol" data-row="${i}">
@@ -504,6 +497,12 @@ function render() {
           ${opts}
         </select>
       </div></td>
+      <td><select class="ss tip" data-field="tip" data-row="${i}">
+        <option value=""${!d.tip?' selected':''}>— Seçiniz —</option>
+        <option value="hizli"${d.tip==='hizli'?' selected':''}>⚡ Hızlı Yükseliş</option>
+        <option value="5dk"${d.tip==='5dk'?' selected':''}>⏱ 5 Dklık Al</option>
+        <option value="swing"${d.tip==='swing'?' selected':''}>📈 Swing</option>
+      </select></td>
       <td><input class="ci" type="text" inputmode="decimal" data-field="sinyal" data-row="${i}" value="${d.sinyal||''}" placeholder="0.00"></td>
       <td><input class="ci" type="text" inputmode="decimal" data-field="giris"  data-row="${i}" value="${d.giris||''}"  placeholder="0.00"></td>
       <td><input class="ci" type="text" inputmode="decimal" data-field="hedef"  data-row="${i}" value="${d.hedef||''}"  placeholder="0.00"></td>
