@@ -464,32 +464,92 @@ function initFirebase() {
 })();
 
 // ── Fiyat güncelle ────────────────────────────────────────
-async function fiyatlariGuncelle() {
+let autoRefreshTimer = null;
+const AUTO_REFRESH_MS = 5 * 60 * 1000; // 5 dakika
+
+async function fiyatlariGuncelle(sessiz = false) {
   const btn = document.getElementById('btnRefresh');
   const icon = btn.querySelector('i');
-  icon.className = 'fa-solid fa-rotate-right spin';
-  btn.disabled = true;
+  if (!sessiz) { icon.className = 'fa-solid fa-rotate-right spin'; btn.disabled = true; }
+
   const semboller = [...new Set(islemler.map(d=>d.sembol).filter(Boolean))];
   if (!semboller.length) {
-    icon.className='fa-solid fa-rotate-right'; btn.disabled=false;
-    showToast('Güncellenecek sembol yok'); return;
+    if (!sessiz) { icon.className='fa-solid fa-rotate-right'; btn.disabled=false; showToast('Güncellenecek sembol yok'); }
+    return;
   }
+
+  // Tüm sembolleri tek sorguda çek (v7 quote — çok daha hızlı)
+  const syms = semboller.map(s => s + '.IS').join(',');
   let n = 0;
-  for (const sem of semboller) {
-    try {
-      const r = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${sem}.IS?interval=1d&range=1d`);
-      if (!r.ok) continue;
+
+  try {
+    // Önce doğrudan dene
+    const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${syms}&fields=regularMarketPrice,symbol`;
+    let r = await fetch(url, { headers: { 'Accept': 'application/json' } }).catch(() => null);
+
+    // CORS engeli varsa proxy ile dene
+    if (!r || !r.ok) {
+      const proxy = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+      r = await fetch(proxy).catch(() => null);
+    }
+
+    if (r && r.ok) {
       const j = await r.json();
-      const p = j?.chart?.result?.[0]?.meta?.regularMarketPrice;
-      if (p && p > 0) { guncelFiyatlar[sem]=p; n++; }
-    } catch(e) {}
+      const results = j?.quoteResponse?.result || [];
+      results.forEach(item => {
+        const sym = item.symbol?.replace('.IS','');
+        const price = item.regularMarketPrice;
+        if (sym && price > 0) { guncelFiyatlar[sym] = price; n++; }
+      });
+    }
+  } catch(e) {}
+
+  // Proxy de tutmadıysa tek tek dene (yavaş ama güvenli fallback)
+  if (n === 0) {
+    for (const sem of semboller) {
+      try {
+        const proxy = `https://corsproxy.io/?${encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${sem}.IS?interval=1d&range=1d`)}`;
+        const r = await fetch(proxy);
+        if (!r.ok) continue;
+        const j = await r.json();
+        const p = j?.chart?.result?.[0]?.meta?.regularMarketPrice;
+        if (p && p > 0) { guncelFiyatlar[sem]=p; n++; }
+      } catch(e) {}
+    }
   }
-  icon.className='fa-solid fa-rotate-right'; btn.disabled=false;
+
+  if (!sessiz) { icon.className='fa-solid fa-rotate-right'; btn.disabled=false; }
+
   const now = new Date();
+  const saat = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
   document.getElementById('lastUpdate').textContent =
-    `Güncellendi: ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} (${n} sembol)`;
-  if (n>0) { showToast(`${n} sembol güncellendi`); render(); }
-  else showToast('Fiyat alınamadı — CORS sorunu olabilir');
+    `Güncellendi: ${saat} (${n}/${semboller.length} sembol)`;
+
+  if (n > 0) {
+    render();
+    if (!sessiz) showToast(`${n} sembol güncellendi`);
+  } else if (!sessiz) {
+    showToast('Fiyat alınamadı — internet bağlantısını kontrol et');
+  }
+
+  // Otomatik yenilemeyi resetle
+  clearTimeout(autoRefreshTimer);
+  autoRefreshTimer = setTimeout(() => fiyatlariGuncelle(true), AUTO_REFRESH_MS);
+  geriSayimBaslat(AUTO_REFRESH_MS);
+}
+
+// ── Geri sayım göstergesi ─────────────────────────────────
+let geriSayimInterval = null;
+function geriSayimBaslat(ms) {
+  clearInterval(geriSayimInterval);
+  let kalan = Math.round(ms / 1000);
+  const el = document.getElementById('lastUpdate');
+  geriSayimInterval = setInterval(() => {
+    kalan--;
+    if (kalan <= 0) { clearInterval(geriSayimInterval); return; }
+    const mevcut = el.textContent.split('·')[0].trim();
+    el.textContent = `${mevcut} · ${kalan}s`;
+  }, 1000);
 }
 
 // ── Render ────────────────────────────────────────────────
@@ -802,6 +862,9 @@ function showToast(msg) {
 
 // ── Başlat ────────────────────────────────────────────────
 initFirebase();
+
+// Sayfa açılınca 3 saniye sonra fiyatları otomatik çek
+setTimeout(() => fiyatlariGuncelle(true), 3000);
 </script>
 </body>
 </html>
