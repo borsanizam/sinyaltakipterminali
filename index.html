@@ -155,6 +155,27 @@ input[type="date"].ci::-webkit-calendar-picker-indicator{filter:invert(.4);curso
   justify-content:center;font-size:10px;transition:all .12s}
 .del-btn:hover{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.35);color:var(--red)}
 
+/* FILTER BAR */
+.filter-bar{display:flex;flex-wrap:wrap;gap:12px;padding:12px 18px;
+  background:var(--bg-card);border-bottom:1px solid var(--border);align-items:center}
+.filter-group{display:flex;align-items:center;gap:6px}
+.filter-lbl{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--text-3);white-space:nowrap;margin-right:2px}
+.fb{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:4px;
+  cursor:pointer;font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.5px;
+  border:1px solid var(--border-hi);background:transparent;color:var(--text-2);
+  transition:all .15s;white-space:nowrap}
+.fb:hover{background:var(--bg-hover);color:var(--text-1);border-color:#303d60}
+.fb.active{background:var(--bg-hover);border-color:var(--blue);color:var(--text-1)}
+.fb.active.f-hizli{border-color:#f97316;color:#f97316;background:rgba(249,115,22,.1)}
+.fb.active.f-5dk{border-color:var(--cyan);color:var(--cyan);background:rgba(34,211,238,.1)}
+.fb.active.f-swing{border-color:#a78bfa;color:#a78bfa;background:rgba(167,139,250,.1)}
+.fb.active.f-bekliyor{border-color:var(--yellow);color:var(--yellow);background:rgba(245,158,11,.1)}
+.fb.active.f-hedef{border-color:var(--green);color:var(--green);background:rgba(34,197,94,.1)}
+.fb.active.f-stop{border-color:var(--red);color:var(--red);background:rgba(239,68,68,.1)}
+.filter-sep{width:1px;height:20px;background:var(--border-hi)}
+.filter-count{font-size:9px;color:var(--text-3);margin-left:auto;letter-spacing:1px;white-space:nowrap}
+
 /* TIP STATS */
 .tip-stats{display:flex;gap:0;border-bottom:1px solid var(--border);flex-wrap:wrap}
 .tip-stat{flex:1;min-width:200px;padding:10px 20px;background:var(--bg-panel);border-right:1px solid var(--border);display:flex;align-items:center;gap:12px}
@@ -230,6 +251,24 @@ tbody tr{animation:rowIn .18s ease forwards}
       </div>
       <button onclick="yeniSatir()" class="btn btn-add"><i class="fa-solid fa-plus"></i> Yeni İşlem</button>
     </div>
+    <div class="filter-bar">
+      <span class="filter-lbl">Tip</span>
+      <div class="filter-group">
+        <button class="fb active" data-ftip="">Tümü</button>
+        <button class="fb f-hizli" data-ftip="hizli">⚡ Dip Avcısı</button>
+        <button class="fb f-5dk" data-ftip="5dk">⏱ 5 Dklık Al</button>
+        <button class="fb f-swing" data-ftip="swing">📈 Swing</button>
+      </div>
+      <div class="filter-sep"></div>
+      <span class="filter-lbl">Durum</span>
+      <div class="filter-group">
+        <button class="fb active" data-fdurum="">Tümü</button>
+        <button class="fb f-bekliyor" data-fdurum="Bekliyor">⏳ Bekliyor</button>
+        <button class="fb f-hedef" data-fdurum="Hedefe Ulaştı">✅ Hedefe Ulaştı</button>
+        <button class="fb f-stop" data-fdurum="Stop Oldu">❌ Stop Oldu</button>
+      </div>
+      <span class="filter-count" id="filterCount"></span>
+    </div>
     <div class="tbl-wrap">
       <table>
         <thead><tr>
@@ -279,6 +318,29 @@ let db = null;
 let saveTimer = null;
 let snapshotActive = false;
 let offlineToastShown = false;
+
+// ── Filtre state ──────────────────────────────────────────
+let filterTip   = '';   // '' = tümü
+let filterDurum = '';   // '' = tümü
+
+function applyFilters() {
+  const rows = document.querySelectorAll('#tablo tr[data-row]');
+  let visible = 0;
+  rows.forEach(tr => {
+    const i = parseInt(tr.dataset.row);
+    const d = islemler[i];
+    if (!d) return;
+    const tipOk   = !filterTip   || d.tip   === filterTip;
+    const durumOk = !filterDurum || d.durum === filterDurum;
+    tr.style.display = (tipOk && durumOk) ? '' : 'none';
+    if (tipOk && durumOk) visible++;
+  });
+  const total = rows.length;
+  const fc = document.getElementById('filterCount');
+  if (fc) fc.textContent = (filterTip || filterDurum)
+    ? `${visible} / ${total} İŞLEM`
+    : '';
+}
 
 function toNum(v) {
   if (v === undefined || v === null || v === '') return NaN;
@@ -506,7 +568,29 @@ function render() {
   });
 
   stats();
+  applyFilters();
 }
+
+// ── Filtre buton tıklamaları ──────────────────────────────
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('.fb');
+  if (!btn) return;
+
+  if (btn.dataset.ftip !== undefined) {
+    filterTip = btn.dataset.ftip;
+    document.querySelectorAll('[data-ftip]').forEach(b => {
+      b.classList.toggle('active', b.dataset.ftip === filterTip);
+    });
+    applyFilters();
+  }
+  if (btn.dataset.fdurum !== undefined) {
+    filterDurum = btn.dataset.fdurum;
+    document.querySelectorAll('[data-fdurum]').forEach(b => {
+      b.classList.toggle('active', b.dataset.fdurum === filterDurum);
+    });
+    applyFilters();
+  }
+});
 
 // ── Event Delegation ──────────────────────────────────────
 function handleNumericField(el) {
