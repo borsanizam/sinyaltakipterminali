@@ -694,6 +694,17 @@ document.getElementById('tablo').addEventListener('input', function(e) {
 
 document.getElementById('tablo').addEventListener('blur', function(e) {
   const el = e.target;
+  // Sembol select — odak kaybolunca ne seçili ise kaydet
+  if (el.tagName === 'SELECT' && el.dataset.field === 'sembol') {
+    const i = parseInt(el.dataset.row);
+    if (!isNaN(i) && el.value && islemler[i]) {
+      if (islemler[i].sembol !== el.value) {
+        islemler[i].sembol = el.value;
+        save();
+      }
+    }
+  }
+  // Sayısal input alanları
   if (el.tagName === 'INPUT' && el.dataset.field !== 'sembol') {
     handleNumericField(el);
   }
